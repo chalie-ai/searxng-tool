@@ -1,0 +1,61 @@
+{
+  "name": "searxng",
+  "version": "1.0",
+  "description": "Search the web using SearXNG, a privacy-focused metasearch that aggregates results from multiple search engines (Google, Bing, DuckDuckGo, Brave, Wikipedia, etc.). Returns unified titles, snippets, URLs, and source engines.",
+  "documentation": "SearXNG is a privacy-focused metasearch engine that aggregates results from multiple search engines into a single unified response. Use for general web searches, research, and current information. Unlike single-engine searches, SearXNG provides diverse results from multiple sources. Common triggers: asking about current events, recent updates, technical documentation, research topics, finding resources across multiple sources. Pair with web_read for full article content when snippets are insufficient.",
+  "category": "research",
+  "icon": "https://www.vectorlogo.zone/logos/google/google-icon.svg",
+  "trigger": {
+    "type": "on_demand",
+    "description": "Initiated by Chalie during reasoning when external information is needed"
+  },
+
+  "parameters": {
+    "query": { "type": "string", "required": true, "description": "Search query text" },
+    "limit": { "type": "integer", "required": false, "default": 5, "description": "Max results (1-20)" },
+    "categories": { "type": "string", "required": false, "description": "Comma-separated categories (general, social media, images, news, etc.)" },
+    "time_range": { "type": "string", "required": false, "description": "Time range: day, week, month, year" }
+  },
+
+  "returns": {
+    "results": { "type": "array", "description": "List of {title, snippet, url, engine}" },
+    "count": { "type": "integer", "description": "Number of results returned" }
+  },
+
+  "constraints": {
+    "timeout_seconds": 12
+  },
+
+  "config_schema": {
+    "SEARXNG_URL": {
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "description": "SearXNG base URL (default: http://localhost:8080, internal to container)",
+      "default": "http://localhost:8080"
+    }
+  },
+
+  "sandbox": {
+    "network": "bridge",
+    "memory": "256m",
+    "writable": true
+  },
+
+  "tips": [
+    "Use for current information not in memory",
+    "SearXNG aggregates from multiple engines for diverse results",
+    "Pair with web_read to get full article content from promising results",
+    "Use memorize to persist key findings as gists or facts"
+  ],
+
+  "output": {
+    "synthesize": true,
+    "card": {
+      "enabled": true,
+      "title": "SearXNG Search Results",
+      "accent_color": "#00F0FF",
+      "background_color": "rgba(0, 240, 255, 0.06)"
+    }
+  }
+}
