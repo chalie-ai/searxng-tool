@@ -38,8 +38,7 @@
 
   "sandbox": {
     "network": "bridge",
-    "memory": "256m",
-    "writable": true
+    "memory": "256m"
   },
 
   "tips": [
@@ -52,10 +51,7 @@
   "output": {
     "synthesize": true,
     "card": {
-      "enabled": true,
-      "title": "SearXNG Search Results",
-      "accent_color": "#00F0FF",
-      "background_color": "rgba(0, 240, 255, 0.06)"
+      "enabled": false
     }
   }
 }

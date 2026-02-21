@@ -1,8 +1,12 @@
-FROM python:3.11-slim
+FROM searxng/searxng:latest
 
-WORKDIR /tool
-COPY requirements.txt ./
-RUN pip install -r requirements.txt --no-cache-dir
-COPY . .
+# Install pip and requests (needed by handler.py)
+RUN python3 -m ensurepip && \
+    python3 -m pip install --no-cache-dir requests>=2.31
 
-ENTRYPOINT ["python", "runner.py"]
+# Copy tool files — leave /usr/local/searxng intact as SearXNG's working directory
+COPY handler.py runner.py /tool/
+COPY entrypoint.sh /tool/entrypoint.sh
+RUN chmod +x /tool/entrypoint.sh
+
+ENTRYPOINT ["/tool/entrypoint.sh"]
