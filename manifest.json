@@ -26,15 +26,7 @@
     "timeout_seconds": 12
   },
 
-  "config_schema": {
-    "SEARXNG_URL": {
-      "type": "string",
-      "required": false,
-      "secret": false,
-      "description": "SearXNG base URL (default: http://localhost:8080, internal to container)",
-      "default": "http://localhost:8080"
-    }
-  },
+  "config_schema": {},
 
   "sandbox": {
     "network": "bridge",
