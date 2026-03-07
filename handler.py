@@ -1,7 +1,9 @@
 """
 SearXNG Search Tool Handler — Search the web for current information via SearXNG.
 
-Returns titles, snippets, URLs, and source engines from SearXNG (privacy-focused metasearch).
+Returns titles, snippets, URLs, source engines, and (optionally) image results
+from SearXNG (privacy-focused metasearch). Image search runs in a parallel thread
+with an aggressive timeout so it never delays the primary search result.
 Config injected via runner.py; defaults fall back to os.getenv().
 """
 
@@ -9,12 +11,14 @@ import logging
 import os
 import time
 import requests
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from typing import Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
 _MAX_RETRIES = 3
 _BACKOFF_BASE = 2  # seconds: 2, 4, 8
+_IMAGE_FETCH_TIMEOUT = 0.8  # seconds — aggressive; images are optional enrichment
 
 
 def execute(topic: str, params: dict, config: dict = None, telemetry: dict = None) -> dict:
@@ -29,10 +33,14 @@ def execute(topic: str, params: dict, config: dict = None, telemetry: dict = Non
             "categories": str (optional, comma-separated),
             "time_range": str (optional, e.g. "day", "week", "month", "year")
         }
-        config: {"SEARXNG_URL"}
+        config: {"SEARXNG_URL", "SEARXNG_TIMEOUT"}
 
     Returns:
-        {"results": [{"title", "snippet", "url", "engine"}], "count": int}
+        {
+            "results": [{"title", "snippet", "url", "engine"}],
+            "images": [{"url", "thumbnail", "title", "source"}],  # up to 3, best-effort
+            "count": int
+        }
     """
     config = config or {}
 
@@ -46,13 +54,33 @@ def execute(topic: str, params: dict, config: dict = None, telemetry: dict = Non
     time_range = params.get("time_range", "").strip()
 
     if not query:
-        return {"results": [], "count": 0}
+        return {"results": [], "images": [], "count": 0}
 
+    # Run main search and image search in parallel to avoid latency stacking.
+    # Image search is best-effort: if it doesn't finish within _IMAGE_FETCH_TIMEOUT
+    # after the main search completes, it is silently dropped.
+    images = []
     try:
-        results = _search_searxng(searxng_url, query, limit, categories, time_range, timeout)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            main_future = pool.submit(
+                _search_searxng, searxng_url, query, limit, categories, time_range, timeout
+            )
+            img_future = pool.submit(
+                _fetch_images, searxng_url, query, min(timeout, 3)
+            )
+
+            # Main search (required — propagate failures)
+            results = main_future.result(timeout=timeout)
+
+            # Image search (optional — discard on timeout or error)
+            try:
+                images = img_future.result(timeout=_IMAGE_FETCH_TIMEOUT)
+            except (FuturesTimeout, Exception) as img_err:
+                logger.debug(f"[SEARXNG] Image fetch skipped: {img_err}")
+                images = []
     except Exception as e:
         logger.error(f"[SEARXNG SEARCH] Search failed: {e}")
-        return {"results": [], "count": 0, "error": str(e)[:200]}
+        return {"results": [], "images": [], "count": 0, "error": str(e)[:200]}
 
     formatted = []
     for r in results:
@@ -68,6 +96,7 @@ def execute(topic: str, params: dict, config: dict = None, telemetry: dict = Non
 
     return {
         "results": formatted,
+        "images": images,
         "count": len(formatted),
     }
 
@@ -147,3 +176,55 @@ def _search_searxng(searxng_url: str, query: str, limit: int, categories: str, t
     # All retries exhausted
     logger.error(f"[SEARXNG] All {_MAX_RETRIES} retries exhausted for query: {query[:80]}")
     raise last_err or requests.exceptions.RequestException("Search retries exhausted")
+
+
+def _fetch_images(searxng_url: str, query: str, timeout: int) -> List[Dict[str, Any]]:
+    """
+    Fetch image results from SearXNG for the given query.
+
+    Makes a single POST request with categories=images. No retries — this is
+    best-effort enrichment; failures are silently discarded by the caller.
+
+    Returns up to 3 image dicts: {url, thumbnail, title, source}
+    """
+    try:
+        response = requests.post(
+            f"{searxng_url}/search",
+            data={
+                "q": query,
+                "format": "json",
+                "categories": "images",
+                "pageno": 1,
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        items = response.json().get("results", [])
+
+        images = []
+        seen = set()
+        for item in items:
+            thumbnail = item.get("img_src", "") or item.get("thumbnail_src", "")
+            url = item.get("url", "")
+            if not thumbnail or url in seen:
+                continue
+            seen.add(url)
+            # Derive the source domain for attribution
+            try:
+                source = url.split("/")[2] if "/" in url else url
+            except Exception:
+                source = ""
+            images.append({
+                "url": url,
+                "thumbnail": thumbnail,
+                "title": item.get("title", ""),
+                "source": source,
+            })
+            if len(images) >= 3:
+                break
+
+        return images
+
+    except Exception as e:
+        logger.debug(f"[SEARXNG] Image fetch failed: {e}")
+        return []

@@ -1,8 +1,8 @@
 {
   "name": "searxng",
   "version": "1.0",
-  "description": "Search the web using SearXNG, a privacy-focused metasearch that aggregates results from multiple search engines (Google, Bing, DuckDuckGo, Brave, Wikipedia, etc.). Returns unified titles, snippets, URLs, and source engines.",
-  "documentation": "SearXNG is a privacy-focused metasearch engine that aggregates results from multiple search engines into a single unified response. Use for general web searches, research, and current information. Unlike single-engine searches, SearXNG provides diverse results from multiple sources. Common triggers: asking about current events, recent updates, technical documentation, research topics, finding resources across multiple sources. Pair with web_read for full article content when snippets are insufficient.",
+  "description": "Search the web using SearXNG, a privacy-focused metasearch that aggregates results from multiple search engines (Google, Bing, DuckDuckGo, Brave, Wikipedia, etc.). Returns unified titles, snippets, URLs, source engines, and when available, image results.",
+  "documentation": "SearXNG is a privacy-focused metasearch engine that aggregates results from multiple search engines into a single unified response. Use for general web searches, research, and current information. Unlike single-engine searches, SearXNG provides diverse results from multiple sources. Returns text results plus optional image results from a parallel image search. Common triggers: asking about current events, recent updates, technical documentation, research topics, finding resources across multiple sources. Pair with web_read for full article content when snippets are insufficient. For rich or broad queries, consider using emit_card to present findings as a visual card with sources and images.",
   "category": "research",
   "icon": "https://www.vectorlogo.zone/logos/google/google-icon.svg",
   "trigger": {
@@ -19,7 +19,8 @@
 
   "returns": {
     "results": { "type": "array", "description": "List of {title, snippet, url, engine}" },
-    "count": { "type": "integer", "description": "Number of results returned" }
+    "images": { "type": "array", "description": "List of {url, thumbnail, title, source} — up to 3, best-effort" },
+    "count": { "type": "integer", "description": "Number of text results returned" }
   },
 
   "constraints": {
@@ -37,13 +38,19 @@
     "Use for current information not in memory",
     "SearXNG aggregates from multiple engines for diverse results",
     "Pair with web_read to get full article content from promising results",
-    "Use memorize to persist key findings as gists or facts"
+    "Use memorize to persist key findings as gists or facts",
+    "When results include images or 3+ sources from different domains, consider emit_card for a visual card",
+    "For complex queries, iterate: search → evaluate → refine query and search again"
   ],
 
   "output": {
     "synthesize": true,
     "card": {
-      "enabled": false
+      "enabled": true,
+      "mode": "deferred",
+      "title": "Web Search",
+      "accent_color": "#1a8fff",
+      "background_color": "rgba(26, 143, 255, 0.06)"
     }
   }
 }

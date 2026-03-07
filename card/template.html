@@ -1,0 +1,55 @@
+<div style="font-family:system-ui,sans-serif;color:#eae6f2;padding:14px 16px;">
+
+  <!-- Summary — prominent one-liner -->
+  <div style="font-size:15px;font-weight:600;color:#eae6f2;line-height:1.5;margin-bottom:12px;">
+    {{summary}}
+  </div>
+
+  <!-- Collapsible detailed response — only rendered when response is non-empty.
+       Uses response_lines (one-item list or empty) as the conditional gate. -->
+  {{#response_lines}}
+  <details style="margin-bottom:16px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);padding:6px 10px;">
+    <summary style="cursor:pointer;font-size:12px;color:rgba(234,230,242,0.45);user-select:none;list-style:none;display:flex;align-items:center;gap:6px;padding:2px 0;">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink:0;">
+        <path d="M2 3.5L5 6.5L8 3.5" stroke="rgba(234,230,242,0.4)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Read more
+    </summary>
+    <div style="font-size:13px;color:rgba(234,230,242,0.72);line-height:1.65;margin-top:10px;white-space:pre-line;padding-bottom:2px;">
+      {{.text}}
+    </div>
+  </details>
+  {{/response_lines}}
+
+  <!-- Image carousel — uses the generic data-carousel convention wired by tool_result.js.
+       Each image dict includes a "display" field ("flex" for first, "none" for rest).
+       CSS hides the container when no slides are present (:has selector). -->
+  <div data-carousel style="position:relative;margin-bottom:16px;border-radius:8px;overflow:hidden;background:#0a0c12;border:1px solid rgba(255,255,255,0.05);">
+    {{#images}}
+    <div data-slide style="display:{{.display}};align-items:center;justify-content:center;width:100%;aspect-ratio:16/9;overflow:hidden;position:relative;">
+      <img src="{{.thumbnail}}" alt="{{.title}}" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy"/>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:36px;background:linear-gradient(transparent,rgba(0,0,0,0.55));pointer-events:none;"></div>
+      <div style="position:absolute;bottom:7px;left:10px;font-size:10px;color:rgba(255,255,255,0.55);text-shadow:0 1px 3px rgba(0,0,0,0.9);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        {{.source}}
+      </div>
+    </div>
+    {{/images}}
+    <button data-prev style="position:absolute;left:7px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);background:rgba(6,8,14,0.75);color:rgba(234,230,242,0.7);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 220ms ease;line-height:1;padding:0;">&#8249;</button>
+    <button data-next style="position:absolute;right:7px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);background:rgba(6,8,14,0.75);color:rgba(234,230,242,0.7);font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 220ms ease;line-height:1;padding:0;">&#8250;</button>
+    <div style="display:flex;justify-content:center;gap:5px;padding:7px 0 8px;">
+      {{#images}}<div data-dot style="width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.22);cursor:pointer;transition:all 220ms ease;"></div>{{/images}}
+    </div>
+  </div>
+
+  <!-- Sources — domain TLDs with pipe dividers, each a link to the source page.
+       domain and pipe_before fields are injected by emit_card_skill.py. -->
+  <div>
+    <div style="font-size:10px;color:rgba(26,143,255,0.6);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">
+      Sources <span style="color:rgba(234,230,242,0.25);font-size:9px;text-transform:none;letter-spacing:0;">{{source_count}} aggregated</span>
+    </div>
+    <div style="font-size:12px;line-height:1.8;color:rgba(234,230,242,0.35);">
+      {{#results}}{{.pipe_before}}<a href="{{.url}}" target="_blank" rel="noopener noreferrer" style="color:rgba(234,230,242,0.6);text-decoration:none;transition:color 220ms ease;">{{.domain}}</a>{{/results}}
+    </div>
+  </div>
+
+</div>

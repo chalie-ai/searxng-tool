@@ -27,4 +27,20 @@ settings = payload.get("settings", {})
 telemetry = payload.get("telemetry", {})
 result = execute(topic="", params=params, config=settings, telemetry=telemetry)
 result["text"] = _format_text(result)
+
+# Attach metadata used by the deferred card system for eligibility hints.
+# Unique domains give Chalie a sense of source diversity.
+results_list = result.get("results", [])
+unique_domains = set()
+for r in results_list:
+    url = r.get("url", "")
+    parts = url.split("/")
+    if len(parts) > 2:
+        unique_domains.add(parts[2])
+result["_meta"] = {
+    "source_count": result.get("count", 0),
+    "has_images": bool(result.get("images")),
+    "unique_domains": len(unique_domains),
+}
+
 print(json.dumps(result))

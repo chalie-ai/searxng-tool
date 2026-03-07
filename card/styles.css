@@ -1,0 +1,39 @@
+/* SearXNG Card — Radiant design with blue web-search accent.
+   Scoped automatically by CardRendererService to [data-card-scope='{id}'].
+   Only interactive states and structural fixes that can't be expressed inline. */
+
+/* Hide carousel container when it has no slide images (empty images list).
+   :has() is supported in Chrome 105+, Safari 15.4+, Firefox 121+. */
+[data-carousel]:not(:has([data-slide])) {
+  display: none;
+}
+
+/* Expand chevron animates when details opens */
+details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+details summary svg {
+  transition: transform 220ms ease;
+}
+
+details[open] summary {
+  color: rgba(26, 143, 255, 0.6);
+}
+
+details summary:hover {
+  color: rgba(26, 143, 255, 0.55);
+}
+
+/* Source link hover — blue tint matching web-search accent */
+a:hover {
+  color: rgba(26, 143, 255, 0.85) !important;
+}
+
+/* Carousel nav button hover — blue tint to match this card's accent */
+[data-prev]:hover,
+[data-next]:hover {
+  background: rgba(26, 143, 255, 0.18) !important;
+  border-color: rgba(26, 143, 255, 0.3) !important;
+  color: #1a8fff !important;
+}
